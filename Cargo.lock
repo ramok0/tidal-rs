@@ -805,7 +805,14 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
- "serde_urlencoded",
+ "tokio",
+]
+
+[[package]]
+name = "tidal_rs_test"
+version = "0.1.0"
+dependencies = [
+ "tidal_rs",
  "tokio",
 ]
 
