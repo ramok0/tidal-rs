@@ -8,6 +8,8 @@ pub const AUTH_BASE:&'static str = "https://auth.tidal.com/v1/oauth2";
 pub mod model;
 pub mod client;
 pub mod error;
+pub mod auth;
+pub mod media;
 
 use error::Error;
 use model::*;

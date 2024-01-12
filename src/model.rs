@@ -7,8 +7,8 @@ pub struct DeviceAuth {
     pub user_code: String,
     pub verification_uri: String,
     pub verification_uri_complete: String,
-    pub expires_in: i64,
-    pub interval: i64,
+    pub expires_in: u64,
+    pub interval: u64,
 }
 #[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct User {
@@ -22,7 +22,7 @@ pub struct User {
 
 #[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Authorization {
-    pub access_token:String,
+    pub access_token:Option<String>,
     pub refresh_token: Option<String>,
     pub token_type: String,
     pub expires_in:u64,
