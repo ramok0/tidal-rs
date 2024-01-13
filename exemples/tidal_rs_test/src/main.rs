@@ -111,9 +111,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //     items.iter().for_each(|item| println!("{} - {}", item.title, item.artist.name));
     // }
 
-    let artists = client.search().track("avant 20 ans", None).await?;
+    let tracks = client.search().track("avant 20 ans", None).await?;
+    let track = tracks.first().ok_or(error::Error::NotFound)?;
+        
+    println!("Track : {}", track.title);
 
-    dbg!(artists);
+    let album = client.media().get_album(track.album.id).await?;
+    println!("Album entilted : {}, number of tracks : {}", album.title, album.number_of_tracks.unwrap_or(0));
+
+    let album_tracks = client.media().get_album_tracks(album.id, None).await?;
+
+    album_tracks.iter().for_each(|track| println!("{} - {}", track.title, track.artist.name));
 
     Ok(())      
 }

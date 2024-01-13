@@ -151,10 +151,18 @@ pub struct Artist {
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Album {
-    pub id: i64,
+    pub id: usize,
     pub title: String,
     pub cover: String,
     pub vibrant_color: Option<String>,
+    #[serde(rename = "releaseDate")]
+    pub release_date: Option<String>,
+    #[serde(rename = "audioModes")]
+    pub audio_modes: Option<Vec<AudioMode>>,
+    #[serde(rename = "numberOfTracks")]
+    pub number_of_tracks: Option<i64>,
+    #[serde(rename = "audioQuality")]
+    pub audio_quality: Option<AudioQuality>
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -267,6 +275,7 @@ pub struct ItemResponseItem<T> {
     #[serde(alias = "type")]
     pub item_type: String,
 }
+
 
 pub enum SearchType {
     Artist,

@@ -7,7 +7,8 @@ pub enum Error {
     InvalidRefreshToken,
     WaitingForUserAction,
     FailedToAuthenticate,
-    IncorrectMimeType
+    IncorrectMimeType,
+    NotFound
 }
 
 impl std::fmt::Display for Error {
@@ -21,6 +22,7 @@ impl std::fmt::Display for Error {
             Error::WaitingForUserAction => write!(f, "WaitingForUserAction"),
             Error::FailedToAuthenticate => write!(f, "FailedToAuthenticate"),
             Error::IncorrectMimeType => write!(f, "IncorrectMimeType"),
+            Error::NotFound => write!(f, "NotFound"),
         }
     }
 }

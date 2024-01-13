@@ -57,4 +57,26 @@ impl MediaClient {
 
         Ok(result)
     }
+
+    pub async fn get_album(&self, id:usize) -> Result<Album, Error> {
+        if self.client.authorization().is_none() {
+            return Err(Error::Unauthorized);
+        }
+
+        let url = format!("{}/albums/{}", API_BASE, id);
+        let res = self.client.get::<Album>(&url, None, self.client.country_code()).await?;
+        Ok(res)
+    }
+
+    pub async fn get_album_tracks(&self, id:usize, max:Option<usize>) -> Result<Vec<Track>, Error> {
+        if self.client.authorization().is_none() {
+            return Err(Error::Unauthorized);
+        }
+
+        let url = format!("{}/albums/{}/items", API_BASE, id);
+        let item = self.client.get_items::<ItemResponseItem<Track>>(&url, None, max).await?;
+        let result: Vec<Track> = item.into_iter().map(|i| i.item).collect();
+
+        Ok(result)
+    }
 }
