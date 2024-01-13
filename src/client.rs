@@ -1,6 +1,6 @@
-use std::{sync::Arc, ops::{Deref, DerefMut}};
+use std::{sync::Arc, ops::{Deref, DerefMut}, fmt::Debug};
 use serde::de::DeserializeOwned;
-use crate::{USER_AGENT, auth::AuthClient, media::MediaClient, user::UserClient};
+use crate::{USER_AGENT, auth::AuthClient, media::MediaClient, user::UserClient, search::SearchClient};
 
 use super::{*};
 
@@ -36,6 +36,10 @@ impl TidalApi {
 
     pub fn user(&self) -> UserClient {
         UserClient::new(self.0.clone())
+    }
+
+    pub fn search(&self) -> SearchClient {
+        SearchClient::new(self.0.clone())
     }
 }
 
@@ -84,8 +88,52 @@ impl ClientImpl {
         let result = req.send().await.map_err(|e| Error::Reqwest(e))?.text().await.map_err(|_| Error::ParseError)?;
     //    println!("Result : {}", result);
         let result = serde_json::from_str::<T>(&result);
-     //   dbg!(&result);
+        if result.is_err() {
+            dbg!(&result);
+        }
         Ok(result.map_err(|_| Error::ParseError)?)
+    }
+
+    pub async fn get_items<'a, T>(
+        &self,
+        url: &str,
+        opts: Option<Vec<(String, String)>>,
+        max: Option<usize>,
+    ) -> Result<Vec<T>, Error>
+    where
+        T: DeserializeOwned + Debug + 'a,
+    {
+        let country_code = self.country_code();
+
+        let mut limit = 50;
+        let mut offset = 0;
+        let max = max.unwrap_or(usize::MAX);
+        let mut params = vec![("limit".to_string(), limit.to_string())];
+        if let Some(opt) = opts {
+            params.extend(opt);
+        };
+
+        let mut result: Vec<T> = Vec::new();
+        'req: loop {
+            params.push(("offset".to_string(), offset.to_string()));
+            let json = self.get::<ItemResponse<T>>(url, Some(&params), country_code.clone()).await?;
+
+            limit = json.limit;
+            // the minimum between the items in the response, and the total number of items requested
+            let item_limit = usize::min(json.total_number_of_items, max);
+            for item in json.items {
+                if result.len() >= item_limit {
+                    break 'req;
+                }
+                result.push(item);
+            }
+            offset += limit;
+            params.pop();
+            if offset >= json.total_number_of_items {
+                break 'req;
+            }
+        }
+        Ok(result)
     }
 
     pub fn set_authorization(&mut self, authorization:Option<Authorization>) {

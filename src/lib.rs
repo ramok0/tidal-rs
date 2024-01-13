@@ -12,6 +12,7 @@ pub mod auth;
 pub mod media;
 mod parsing;
 pub mod user;
+pub mod search;
 
 use error::Error;
 use model::*;

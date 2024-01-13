@@ -45,4 +45,16 @@ impl MediaClient {
              _ => Err(Error::IncorrectMimeType),
         }
     }
+
+    pub async fn get_mixes_items(&self, mix:&str, max:Option<usize>) -> Result<Vec<Track>, Error> {
+        if self.client.authorization().is_none() {
+            return Err(Error::Unauthorized);
+        }
+
+        let url = format!("{}/mixes/{}/items", API_BASE, mix);
+        let item = self.client.get_items::<ItemResponseItem<Track>>(&url, None, max).await?;
+        let result: Vec<Track> = item.into_iter().map(|i| i.item).collect();
+
+        Ok(result)
+    }
 }

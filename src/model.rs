@@ -221,8 +221,9 @@ pub enum EncryptionType {
 #[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all(deserialize = "UPPERCASE"))]
 pub struct Mixes {
-    #[serde(rename = "TRACK_MIX")]
+    #[serde(rename = "MASTER_TRACK_MIX")]
     pub master_track_mix: Option<String>,
+    #[serde(rename = "TRACK_MIX")]
     pub track_mix: Option<String>,
 }
 
@@ -248,4 +249,28 @@ pub struct Track {
     pub album: Album,
     pub artist: Artist,
     pub artists: Vec<Artist>,
+}
+
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all(deserialize = "camelCase"))]
+pub struct ItemResponse<T> {
+    pub limit: usize,
+    pub offset: usize,
+    pub total_number_of_items: usize,
+    pub items: Vec<T>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct ItemResponseItem<T> {
+    pub item: T,
+    #[serde(alias = "type")]
+    pub item_type: String,
+}
+
+pub enum SearchType {
+    Artist,
+    Track,
+    Album,
+    Playlist
 }

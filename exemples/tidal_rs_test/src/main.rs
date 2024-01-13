@@ -100,11 +100,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     assert_eq!(client.auth().verify_access_token(client.access_token().unwrap()).await?, true);
 
-    //let _ = client.media().get_stream_url(302246288, model::AudioQuality::Max).await?;
-
     let quality = client.user().get_current_account_highest_sound_quality().await?;
+    // let stream = client.media().get_stream_url(302246288, quality).await?;
+    // dbg!(stream);
 
-    dbg!(quality);
+    // let track = client.media().get_track("302246288").await?;
+    // dbg!(& track.mixes.track_mix);
+    // if let Some(mix) = track.mixes.track_mix {
+    //     let items = client.media().get_mixes_items(&mix, None).await?;
+    //     items.iter().for_each(|item| println!("{} - {}", item.title, item.artist.name));
+    // }
+
+    let artists = client.search().track("avant 20 ans", None).await?;
+
+    dbg!(artists);
 
     Ok(())      
 }
