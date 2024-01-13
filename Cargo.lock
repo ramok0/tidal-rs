@@ -802,6 +802,7 @@ dependencies = [
 name = "tidal_rs"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "reqwest",
  "serde",
  "serde_json",
@@ -812,6 +813,8 @@ dependencies = [
 name = "tidal_rs_test"
 version = "0.1.0"
 dependencies = [
+ "serde",
+ "serde_json",
  "tidal_rs",
  "tokio",
 ]

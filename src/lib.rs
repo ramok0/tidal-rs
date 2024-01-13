@@ -10,6 +10,7 @@ pub mod client;
 pub mod error;
 pub mod auth;
 pub mod media;
+mod parsing;
 
 use error::Error;
 use model::*;

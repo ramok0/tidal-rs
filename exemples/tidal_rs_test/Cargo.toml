@@ -1,18 +1,12 @@
-workspace = { members = ["exemples/tidal_rs_test"] }
 [package]
-name = "tidal_rs"
+name = "tidal_rs_test"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[lib]
-name = "tidal_rs"
-crate-type = ["cdylib", "rlib"]
-
 [dependencies]
-base64 = "0.21.7"
-reqwest = { version = "0.11.23", features = ["json"] }
 serde = { version = "1.0.195", features = ["derive"] }
 serde_json = "1.0.111"
+tidal_rs = {path = "D:/dev/tidal_rs"}
 tokio = { version = "1.35.1", features = ["full"] }

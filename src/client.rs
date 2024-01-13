@@ -1,6 +1,6 @@
 use std::{sync::Arc, ops::{Deref, DerefMut}};
 use serde::de::DeserializeOwned;
-use crate::{USER_AGENT, auth::AuthClient};
+use crate::{USER_AGENT, auth::AuthClient, media::MediaClient};
 
 use super::{*};
 
@@ -55,9 +55,9 @@ impl ClientImpl {
         self.authorization.as_ref().and_then(|a| a.access_token.as_ref().map(|s| s.as_str()))
     }
 
-    async fn get<'a, T>(&self, url: &'a str, query: Option<&[(String, String)]>, country_code:String) -> Result<T, Error>
+    pub async fn get<'a, T>(&self, url: &'a str, query: Option<&[(String, String)]>, country_code:String) -> Result<T, Error>
     where
-        T: DeserializeOwned + 'a,
+        T: DeserializeOwned + std::fmt::Debug + 'a,
     {
         let authorization = self.authorization().ok_or(Error::Unauthorized)?;
 
@@ -78,9 +78,9 @@ impl ClientImpl {
             .query(&params);
 
         let result = req.send().await.map_err(|e| Error::Reqwest(e))?.text().await.map_err(|_| Error::ParseError)?;
-
-        let result = serde_json::from_str::<T>(&result).map_err(|_| Error::ParseError)?;
-        Ok(result)
+        println!("Result : {}", result);
+        let result = serde_json::from_str::<T>(&result);
+        Ok(result.map_err(|_| Error::ParseError)?)
     }
 
     pub fn set_authorization(&mut self, authorization:Option<Authorization>) {
@@ -89,5 +89,9 @@ impl ClientImpl {
 
     pub fn authorization(&self) -> Option<&Authorization> {
         self.authorization.as_ref()
+    }
+
+    pub fn country_code(&self) -> String {
+        self.authorization.as_ref().map(|a| a.user.country_code.clone()).unwrap_or_else(|| "US".to_owned())
     }
 }

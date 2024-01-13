@@ -9,7 +9,8 @@ pub enum Error {
     FailedToGetDeviceCode,
     InvalidRefreshToken,
     WaitingForUserAction,
-    FailedToAuthenticate
+    FailedToAuthenticate,
+    IncorrectMimeType
 }
 
 impl std::fmt::Display for Error {
@@ -21,7 +22,8 @@ impl std::fmt::Display for Error {
             Error::FailedToGetDeviceCode => write!(f, "FailedToGetDeviceCode"),
             Error::InvalidRefreshToken => write!(f, "InvalidRefreshToken"),
             Error::WaitingForUserAction => write!(f, "WaitingForUserAction"),
-            Error::FailedToAuthenticate => write!(f, "FailedToAuthenticate")
+            Error::FailedToAuthenticate => write!(f, "FailedToAuthenticate"),
+            Error::IncorrectMimeType => write!(f, "IncorrectMimeType"),
         }
     }
 }
