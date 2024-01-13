@@ -1,8 +1,8 @@
 //This files contains the structs of Tidal's API.
 
 use std::str::FromStr;
-use base64::{engine::general_purpose::STANDARD, Engine as _};
-use serde::{Deserialize, Serialize};
+use base64::{ engine::general_purpose::STANDARD, Engine as _ };
+use serde::{ Deserialize, Serialize };
 
 #[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -15,40 +15,56 @@ pub struct DeviceAuth {
     pub interval: u64,
 }
 #[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
-pub struct User {
+pub struct MinUser {
     #[serde(rename = "userId")]
-    user_id:u64,
-    email:String,
-    username:String,
-    created:u64,
-    updated:u64,
+    pub user_id: usize,
+    email: String,
+    username: String,
+    created: u64,
+    updated: u64,
     #[serde(rename = "countryCode")]
-    pub country_code:String
+    pub country_code: String,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct User {
+    id: usize,
+    username: String,
+    #[serde(rename = "profileName")]
+    profile_name: Option<String>,
+    #[serde(rename = "profileName")]
+    first_name: Option<String>,
+    #[serde(rename = "lastName")]
+    last_name: Option<String>,
+    email: String,
+    #[serde(rename = "countryCode")]
+    country_code: String,
+    created: String,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Authorization {
-    pub access_token:Option<String>,
+    pub access_token: Option<String>,
     pub refresh_token: Option<String>,
     pub token_type: String,
-    pub expires_in:u64,
-    pub user:User
+    pub expires_in: u64,
+    pub user: MinUser,
 }
 
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 #[serde(rename_all(deserialize = "camelCase"))]
 pub struct PlaybackInfoPostPaywallRes {
     pub track_id: u64,
-    pub asset_presentation:AssetPresentation,
-    pub audio_quality:AudioQuality,
-    pub manifest_mime_type:String,
-    pub manifest:String,
+    pub asset_presentation: AssetPresentation,
+    pub audio_quality: AudioQuality,
+    pub manifest_mime_type: String,
+    pub manifest: String,
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum MimeType {
     M4A,
-    Flac
+    Flac,
 }
 
 impl MimeType {
@@ -59,15 +75,51 @@ impl MimeType {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserSubscription {
+    pub start_date: String,
+    pub valid_until: String,
+    pub status: String,
+    pub subscription: Subscription,
+    pub highest_sound_quality: AudioQuality,
+    pub premium_access: bool,
+    pub can_get_trial: bool
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Subscription {
+    #[serde(rename = "type")]
+    pub subscription_type: SubscriptionType,
+    pub offline_grace_period: i64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum SubscriptionType {
+    Free,
+    Premium,
+    Hifi
+}
+
+impl ToString for SubscriptionType {
+    fn to_string(&self) -> String {
+        match self {
+            SubscriptionType::Free => "FREE".to_string(),
+            SubscriptionType::Premium => "PREMIUM".to_string(),
+            SubscriptionType::Hifi => "HIFI".to_string(),
+        }
+    }
+}
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct PlaybackManifest  {
+pub struct PlaybackManifest {
     #[serde(rename = "mimeType")]
     mime_type: MimeType,
-    codecs:String,
+    codecs: String,
     #[serde(rename = "encryptionType")]
     encryption_type: EncryptionType,
-    urls: Vec<String> 
+    urls: Vec<String>,
 }
 
 impl FromStr for PlaybackManifest {
@@ -78,8 +130,10 @@ impl FromStr for PlaybackManifest {
             eprintln!("Error decoding base64: {}", e);
             super::Error::ParseError
         })?;
-        let value:Self = serde_json::from_slice(&json_bytes).map_err(|_| super::Error::ParseError)?;
-        
+        let value: Self = serde_json
+            ::from_slice(&json_bytes)
+            .map_err(|_| super::Error::ParseError)?;
+
         Ok(value)
     }
 }
@@ -100,7 +154,7 @@ pub struct Album {
     pub id: i64,
     pub title: String,
     pub cover: String,
-    pub vibrant_color: Option<String>
+    pub vibrant_color: Option<String>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -120,7 +174,6 @@ impl ToString for AudioQuality {
             AudioQuality::Max => "HI_RES".to_string(),
         }
     }
-
 }
 
 #[derive(Clone, Debug, PartialEq)]

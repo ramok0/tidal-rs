@@ -1,6 +1,6 @@
 use std::{sync::Arc, ops::{Deref, DerefMut}};
 use serde::de::DeserializeOwned;
-use crate::{USER_AGENT, auth::AuthClient, media::MediaClient};
+use crate::{USER_AGENT, auth::AuthClient, media::MediaClient, user::UserClient};
 
 use super::{*};
 
@@ -32,6 +32,10 @@ impl TidalApi {
 
     pub fn media(&self) -> MediaClient {
         MediaClient::new(self.0.clone())
+    }
+
+    pub fn user(&self) -> UserClient {
+        UserClient::new(self.0.clone())
     }
 }
 
@@ -78,8 +82,9 @@ impl ClientImpl {
             .query(&params);
 
         let result = req.send().await.map_err(|e| Error::Reqwest(e))?.text().await.map_err(|_| Error::ParseError)?;
-        println!("Result : {}", result);
+    //    println!("Result : {}", result);
         let result = serde_json::from_str::<T>(&result);
+     //   dbg!(&result);
         Ok(result.map_err(|_| Error::ParseError)?)
     }
 

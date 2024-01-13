@@ -21,6 +21,10 @@ impl MediaClient {
     }
 
     pub async fn get_stream_url(&self, id: usize, audio_quality:AudioQuality) -> Result<PlaybackManifest, Error> {
+        if self.client.authorization().is_none() {
+            return Err(Error::Unauthorized);
+        }
+
         let url = format!("{}/tracks/{}/playbackinfopostpaywall", &API_BASE, id);
         let query = &[
             ("audioquality".to_string(), audio_quality.to_string()),

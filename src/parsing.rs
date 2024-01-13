@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserializer, Deserialize, de::Visitor};
 
-use crate::model::{AudioQuality, AudioMode, PlaybackMode, AssetPresentation, EncryptionType, MimeType};
+use crate::model::{AudioQuality, AudioMode, PlaybackMode, AssetPresentation, EncryptionType, MimeType, SubscriptionType};
 
 struct AudioQualityVisitor;
 struct AudioModeVisitor;
@@ -8,6 +8,7 @@ struct PlaybackModeVisitor;
 struct AssetPresentationVisitor;
 struct EncryptionTypeVisitor;
 struct MimeTypeVisitor;
+struct SubscriptionTypeVisitor;
 
 impl<'de> Visitor<'de> for AudioQualityVisitor {
     type Value = AudioQuality;
@@ -303,5 +304,54 @@ impl Serialize for MimeType {
             MimeType::M4A => serializer.serialize_str("audio/mp4"),
             MimeType::Flac => serializer.serialize_str("audio/flac"),
         }
+    }
+}
+
+impl<'de> Visitor<'de> for SubscriptionTypeVisitor {
+    type Value = SubscriptionType;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(formatter, "a string representing a subscription type")?;
+
+        Ok(())
+    }
+
+    fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error, {
+        match v.as_str() {
+            "FREE" => Ok(SubscriptionType::Free),
+            "PREMIUM" => Ok(SubscriptionType::Premium),
+            "HIFI" => Ok(SubscriptionType::Hifi),
+            _ => Err(E::unknown_field(v.as_str(), &["FREE", "PREMIUM", "HIFI"])),
+        }
+    }
+
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error, {
+        match v {
+            "FREE" => Ok(SubscriptionType::Free),
+            "PREMIUM" => Ok(SubscriptionType::Premium),
+            "HIFI" => Ok(SubscriptionType::Hifi),
+            _ => Err(E::unknown_field(v, &["Free", "PREMIUM", "HIFI"])),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for SubscriptionType {
+    fn deserialize<D>(deserializer: D) -> Result<SubscriptionType, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        deserializer.deserialize_string(SubscriptionTypeVisitor)
+    }
+}
+
+impl Serialize for SubscriptionType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer, {
+            serializer.serialize_str(self.to_string().as_str())
     }
 }
