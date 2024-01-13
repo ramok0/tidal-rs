@@ -1,4 +1,4 @@
-workspace = { members = ["exemples/tidal_rs_test"] }
+workspace = { members = [ "exemples/song_downloader_exemple","exemples/tidal_rs_test"] }
 [package]
 name = "tidal_rs"
 version = "0.1.0"

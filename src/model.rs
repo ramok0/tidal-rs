@@ -18,10 +18,10 @@ pub struct DeviceAuth {
 pub struct MinUser {
     #[serde(rename = "userId")]
     pub user_id: usize,
-    email: String,
-    username: String,
-    created: u64,
-    updated: u64,
+    pub email: String,
+    pub username: String,
+    pub created: u64,
+    pub  updated: u64,
     #[serde(rename = "countryCode")]
     pub country_code: String,
 }
@@ -112,14 +112,14 @@ impl ToString for SubscriptionType {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
 pub struct PlaybackManifest {
     #[serde(rename = "mimeType")]
-    mime_type: MimeType,
-    codecs: String,
+    pub mime_type: MimeType,
+    pub  codecs: String,
     #[serde(rename = "encryptionType")]
-    encryption_type: EncryptionType,
-    urls: Vec<String>,
+    pub encryption_type: EncryptionType,
+    pub urls: Vec<String>,
 }
 
 impl FromStr for PlaybackManifest {
@@ -244,7 +244,7 @@ pub struct MediaMetadata {
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Track {
-    pub id: i64,
+    pub id: usize,
     pub title: String,
     pub duration: i64,
     pub mixes: Mixes,

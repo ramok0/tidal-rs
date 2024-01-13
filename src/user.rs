@@ -37,7 +37,7 @@ impl UserClient {
         }
 
         let res = self.get_user_subscription(self.client.authorization().unwrap().user.user_id).await?;
-        
+
         Ok(res.highest_sound_quality)
     }
 }

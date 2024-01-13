@@ -5,6 +5,7 @@ use crate::{USER_AGENT, auth::AuthClient, media::MediaClient, user::UserClient, 
 use super::{*};
 
 
+#[derive(Debug, Clone)]
 pub struct TidalApi(Arc<ClientImpl>);
 
 impl Deref for TidalApi {
@@ -43,6 +44,7 @@ impl TidalApi {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct ClientImpl {
     http_client: reqwest::Client,
     authorization: Option<Authorization>
@@ -85,11 +87,12 @@ impl ClientImpl {
             .bearer_auth(&authorization.access_token.as_ref().unwrap())
             .query(&params);
 
-        let result = req.send().await.map_err(|e| Error::Reqwest(e))?.text().await.map_err(|_| Error::ParseError)?;
+        let body = req.send().await.map_err(|e| Error::Reqwest(e))?.text().await.map_err(|_| Error::ParseError)?;
     //    println!("Result : {}", result);
-        let result = serde_json::from_str::<T>(&result);
+        let result = serde_json::from_str::<T>(&body);
         if result.is_err() {
             dbg!(&result);
+            dbg!(body);
         }
         Ok(result.map_err(|_| Error::ParseError)?)
     }
