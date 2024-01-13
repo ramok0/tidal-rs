@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
-use serde::{Deserialize, de::Visitor, Deserializer, Serialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]

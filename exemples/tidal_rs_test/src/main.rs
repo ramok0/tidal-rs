@@ -100,9 +100,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     assert_eq!(client.auth().verify_access_token(client.access_token().unwrap()).await?, true);
 
-    //let media = client.media().get_track("302246288").await;
-    let media = client.media().get_stream_url(302246288, model::AudioQuality::Max).await?;
-    
+    let _ = client.media().get_stream_url(302246288, model::AudioQuality::Max).await?;
+
 
     Ok(())      
 }

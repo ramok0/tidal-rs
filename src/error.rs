@@ -1,6 +1,3 @@
-use std::path::Display;
-
-
 #[derive(Debug)]
 pub enum Error {
     Reqwest(reqwest::Error),
