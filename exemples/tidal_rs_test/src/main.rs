@@ -116,12 +116,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         
     println!("Track : {}", track.title);
 
-    let album = client.media().get_album(track.album.id).await?;
-    println!("Album entilted : {}, number of tracks : {}", album.title, album.number_of_tracks.unwrap_or(0));
+    // let album = client.media().get_album(track.album.id).await?;
+    // println!("Album entilted : {}, number of tracks : {}", album.title, album.number_of_tracks.unwrap_or(0));
 
-    let album_tracks = client.media().get_album_tracks(album.id, None).await?;
+    // let album_tracks = client.media().get_album_tracks(album.id, None).await?;
 
-    album_tracks.iter().for_each(|track| println!("{} - {}", track.title, track.artist.name));
+    // album_tracks.iter().for_each(|track| println!("{} - {}", track.title, track.artist.as_ref().unwrap().name));
 
     Ok(())      
 }

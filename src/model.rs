@@ -1,8 +1,10 @@
 //This files contains the structs of Tidal's API.
 
-use std::str::FromStr;
+use std::{str::FromStr, sync::Arc};
 use base64::{ engine::general_purpose::STANDARD, Engine as _ };
 use serde::{ Deserialize, Serialize };
+
+use crate::error::Error;
 
 #[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -138,17 +140,17 @@ impl FromStr for PlaybackManifest {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct Artist {
-    pub id: i64,
+    pub id: usize,
     pub name: String,
     #[serde(rename = "type")]
     pub type_field: Option<String>,
     pub picture: Option<String>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct Album {
     pub id: usize,
@@ -162,10 +164,19 @@ pub struct Album {
     #[serde(rename = "numberOfTracks")]
     pub number_of_tracks: Option<i64>,
     #[serde(rename = "audioQuality")]
-    pub audio_quality: Option<AudioQuality>
+    pub audio_quality: Option<AudioQuality>,
+    pub artist: Option<Artist>,
+    #[serde(default)]
+    pub artists: Vec<Artist>,
 }
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+impl Album {
+    pub fn get_artist(&self) -> Artist {
+        self.artist.clone().unwrap_or_else(|| self.artists.first().unwrap_or(&Artist { id: 0, name: "Unknown".to_string(), type_field: None, picture: None }).clone())
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, PartialOrd)]
 pub enum AudioQuality {
     Low,
     High,
@@ -184,7 +195,7 @@ impl ToString for AudioQuality {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum AudioMode {
     Stereo,
     DolbyAtmos,
@@ -226,7 +237,7 @@ pub enum EncryptionType {
     None,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 #[serde(rename_all(deserialize = "UPPERCASE"))]
 pub struct Mixes {
     #[serde(rename = "MASTER_TRACK_MIX")]
@@ -235,30 +246,51 @@ pub struct Mixes {
     pub track_mix: Option<String>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct MediaMetadata {
     pub tags: Vec<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize, Eq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub struct Track {
     pub id: usize,
     pub title: String,
     pub duration: i64,
-    pub mixes: Mixes,
+    pub mixes: Option<Mixes>,
     #[serde(rename = "audioQuality")]
     pub audio_quality: AudioQuality,
     pub audio_modes: Vec<AudioMode>,
     pub media_metadata: MediaMetadata,
     pub explicit: bool,
     pub track_number: Option<i64>,
-    pub album: Album,
-    pub artist: Artist,
+    pub album: Option<Album>,
+    pub artist: Option<Artist>,
     pub artists: Vec<Artist>,
 }
 
+impl Track {
+    pub fn get_artist(&self) -> Artist {
+        self.artist.clone().unwrap_or_else(|| self.artists.first().unwrap().clone())
+    }
+
+    pub fn get_cover_url(&self) -> String {
+        if self.album.is_some() {
+            format!("{}/{}/80x80.jpg", "https://resources.tidal.com/images", self.album.as_ref().unwrap().cover.replace("-", "/"))
+        } else {
+            format!("{}/{}/80x80.jpg", "https://resources.tidal.com/images", self.get_artist().picture.as_ref().unwrap().replace("-", "/"))
+        }
+    }
+
+    pub async fn fetch_cover(&self) -> Result<Vec<u8>, super::Error> {
+        let url = self.get_cover_url();
+     //   println!("Cover Url : {}", url);
+        let bytes = reqwest::get(&url).await.map_err(|e| Error::Reqwest(e))?.bytes().await.map_err(|_| Error::ParseError)?;
+      //  fs::write(format!("{}.jpg", self.title), bytes.to_vec());
+        Ok(bytes.to_vec())
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all(deserialize = "camelCase"))]
@@ -269,6 +301,17 @@ pub struct ItemResponse<T> {
     pub items: Vec<T>,
 }
 
+impl<T> Default for ItemResponse<T> {
+    fn default() -> Self {
+        Self {
+            limit: 0,
+            offset: 0,
+            total_number_of_items: 0,
+            items: vec![],
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ItemResponseItem<T> {
     pub item: T,
@@ -276,10 +319,78 @@ pub struct ItemResponseItem<T> {
     pub item_type: String,
 }
 
-
+#[derive(PartialEq, Eq, Clone, Copy, Hash, Debug)]
 pub enum SearchType {
     Artist,
     Track,
     Album,
     Playlist
+}
+
+impl SearchType {
+    pub fn search_types() -> Vec<SearchType> {
+        vec![SearchType::Artist, SearchType::Track, SearchType::Album, SearchType::Playlist]
+    }
+}
+
+impl ToString for SearchType {
+    fn to_string(&self) -> String {
+        match self {
+            SearchType::Artist => "ARTISTS".to_string(),
+            SearchType::Track => "TRACKS".to_string(),
+            SearchType::Album => "ALBUMS".to_string(),
+            SearchType::Playlist => "PLAYLISTS".to_string(),
+        }
+    }
+
+}
+
+#[derive(Debug, serde::Deserialize, serde::Serialize)]
+pub struct SearchResponse {
+    pub artists:ItemResponse<Artist>,
+    pub tracks:ItemResponse<Track>,
+    pub albums:ItemResponse<Album>
+}
+
+#[derive(Debug, PartialEq)]
+pub struct SearchResult {
+    pub artists:Vec<Artist>,
+    pub tracks:Vec<Track>,
+    pub albums:Vec<Album>
+}
+
+impl Default for SearchResult {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl SearchResult {
+    pub fn new() -> Self {
+        Self {
+            artists: vec![],
+            tracks: vec![],
+            albums: vec![]
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.artists.clear();
+        self.tracks.clear();
+        self.albums.clear();
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.artists.is_empty() && self.tracks.is_empty() && self.albums.is_empty()
+    }
+}
+
+impl From<SearchResponse> for SearchResult {
+    fn from(value: SearchResponse) -> Self {
+        Self {
+            artists: value.artists.items,
+            tracks: value.tracks.items,
+            albums: value.albums.items
+        }
+    }
 }

@@ -1,7 +1,8 @@
 use std::{sync::Arc, ops::{Deref, DerefMut}, fmt::Debug};
+use reqwest::StatusCode;
 use serde::de::DeserializeOwned;
 use crate::{USER_AGENT, auth::AuthClient, media::MediaClient, user::UserClient, search::SearchClient};
-
+use async_recursion::async_recursion;
 use super::{*};
 
 
@@ -65,7 +66,8 @@ impl ClientImpl {
         self.authorization.as_ref().and_then(|a| a.access_token.as_ref().map(|s| s.as_str()))
     }
 
-    pub async fn get<'a, T>(&self, url: &'a str, query: Option<&[(String, String)]>, country_code:String) -> Result<T, Error>
+    #[async_recursion]
+    pub async fn get<'a, T>(&self, url: &'a str, query: std::option::Option<&'async_recursion [(std::string::String, std::string::String)]>, country_code:String) -> Result<T, Error>
     where
         T: DeserializeOwned + std::fmt::Debug + 'a,
     {
@@ -75,7 +77,7 @@ impl ClientImpl {
             return Err(Error::Unauthorized);
         }
 
-        let country_param = ("countryCode".to_owned(), country_code);
+        let country_param = ("countryCode".to_owned(), country_code.clone());
         let mut params = Vec::new();
         if let Some(query) = query {
             params.extend(query);
@@ -87,12 +89,28 @@ impl ClientImpl {
             .bearer_auth(&authorization.access_token.as_ref().unwrap())
             .query(&params);
 
-        let body = req.send().await.map_err(|e| Error::Reqwest(e))?.text().await.map_err(|_| Error::ParseError)?;
+        let response = req.send().await.map_err(|e| Error::Reqwest(e))?;
+
+        let status = response.status();
+
+        if status == StatusCode::TOO_MANY_REQUESTS {
+            let retry_after = response.headers().get("Retry-After").map(|x| x.to_str().unwrap().parse::<u64>().unwrap()).unwrap_or(5);  
+            tokio::time::sleep(tokio::time::Duration::from_secs(retry_after)).await;
+            return self.get(url, query, country_code).await;
+        }
+
+        let body = response.text().await.map_err(|_| Error::ParseError)?;
+
+        // if url.contains("album") && url.contains("items") {
+        //     println!("Body : {}", body);
+        // }
+
     //    println!("Result : {}", result);
         let result = serde_json::from_str::<T>(&body);
         if result.is_err() {
             dbg!(&result);
             dbg!(body);
+            dbg!(status);
         }
         Ok(result.map_err(|_| Error::ParseError)?)
     }

@@ -22,7 +22,6 @@ impl<'de> Visitor<'de> for AudioQualityVisitor {
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
         where
             E: serde::de::Error, {
-                println!("VISIT : {}", v);
         match v.as_str() {
             "LOW" => Ok(AudioQuality::Low),
             "HIGH" => Ok(AudioQuality::High),

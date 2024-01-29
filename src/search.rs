@@ -10,6 +10,21 @@ impl SearchClient {
         Self { client }
     }
 
+    pub async fn all(&self, query:&str, _max:Option<usize>) -> Result<SearchResult, Error> {
+        if self.client.authorization().is_none() {
+            return Err(Error::Unauthorized);
+        }
+
+        let url = format!("{}/search", API_BASE);
+        let query = &[
+            ("query".to_string(), query.to_string())
+        ];
+
+        let res = self.client.get::<SearchResponse>(&url, Some(query), self.client.country_code()).await?;
+
+        Ok(SearchResult::from(res))
+    }
+
     pub async fn artist(&self, query:&str, max:Option<usize>) -> Result<Vec<Artist>, Error> 
     {
         if self.client.authorization().is_none() {
@@ -18,7 +33,8 @@ impl SearchClient {
 
         let url = format!("{}/search/artists", API_BASE);
         let query = &[
-            ("query".to_string(), query.to_string())
+            ("query".to_string(), query.to_string()),
+            ("limit".to_string(), max.unwrap_or(50).to_string())
         ];
 
         let res = self.client.get_items::<Artist>(&url, Some(query.to_vec()), max).await?;
@@ -55,16 +71,16 @@ impl SearchClient {
         Ok(res)
     }
 
-    pub async fn playlist(&self, query:&str, max:Option<usize>) -> Result<(), Error> 
+    pub async fn playlist(&self, _query:&str, _max:Option<usize>) -> Result<(), Error> 
     {
-        if self.client.authorization().is_none() {
-            return Err(Error::Unauthorized);
-        }
+        // if self.client.authorization().is_none() {
+        //     return Err(Error::Unauthorized);
+        // }
 
-        let url = format!("{}/search/playlists", API_BASE);
-        let query = &[
-            ("query".to_string(), query.to_string())
-        ];
+        // let url = format!("{}/search/playlists", API_BASE);
+        // let query = &[
+        //     ("query".to_string(), query.to_string())
+        // ];
 
         todo!("Implement playlists.")
     }

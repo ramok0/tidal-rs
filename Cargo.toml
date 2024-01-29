@@ -1,4 +1,4 @@
-workspace = { members = [ "exemples/song_downloader_exemple","exemples/tidal_rs_test"] }
+workspace = { members = [ "exemples/tidal_rs_test"] }
 [package]
 name = "tidal_rs"
 version = "0.1.0"
@@ -11,6 +11,7 @@ name = "tidal_rs"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+async-recursion = "1.0.5"
 base64 = "0.21.7"
 reqwest = { version = "0.11.23", features = ["json"] }
 serde = { version = "1.0.195", features = ["derive"] }

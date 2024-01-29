@@ -11,13 +11,52 @@ impl MediaClient {
         Self { client }
     }
 
-    pub async fn get_track(&self, id: &str) -> Result<Track, Error> {
+    pub async fn get_artist_albums(&self, id: usize, max:Option<usize>) -> Result<Vec<Album>, Error> {
+        if self.client.authorization().is_none() {
+            return Err(Error::Unauthorized);
+        }
+
+        let url = format!("{}/artists/{}/albums", API_BASE, id);
+        let item = self.client.get_items::<Album>(&url, None, max).await?;
+
+        Ok(item)
+    }
+    
+    pub async fn get_artist_singles(&self, id:usize, max:Option<usize>) -> Result<Vec<Album>, Error> 
+    {
+        if self.client.authorization().is_none() {
+            return Err(Error::Unauthorized);
+        }
+
+        let url = format!("{}/artists/{}/albums", API_BASE, id);
+
+        let opts = &[
+            ("filter".to_string(), "EPSANDSINGLES".to_string())
+        ];
+
+        let item = self.client.get_items::<Album>(&url, Some(opts.to_vec()), max).await?;
+
+        Ok(item)
+    }
+
+    pub async fn get_track(&self, id: usize) -> Result<Track, Error> {
         if self.client.authorization().is_none() {
             return Err(Error::Unauthorized);
         }
 
         let url = format!("{}/tracks/{}", &API_BASE, id);
         self.client.get::<Track>(&url, None, self.client.country_code()).await
+    }
+
+    pub async fn get_highest_quality_avaliable_stream_url(&self, id: usize, user_audio_quality:AudioQuality) -> Result<PlaybackManifest, Error> {
+        let track = self.get_track(id).await?;
+        let mut download_quality = user_audio_quality;
+
+        if download_quality > track.audio_quality {
+            download_quality = track.audio_quality;
+        }
+
+        self.get_stream_url(id, download_quality).await
     }
 
     pub async fn get_stream_url(&self, id: usize, audio_quality:AudioQuality) -> Result<PlaybackManifest, Error> {
